@@ -1,0 +1,951 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>World Cup Oracle — Walrus Memory Agent</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔮</text></svg>">
+  <style>
+    :root {
+      --bg: #0a0e1a;
+      --card: #111827;
+      --card-hover: #1a2236;
+      --accent: #fbbf24;
+      --accent2: #10b981;
+      --accent3: #8b5cf6;
+      --text: #e5e7eb;
+      --text-dim: #9ca3af;
+      --border: #1e293b;
+      --danger: #ef4444;
+      --success: #22c55e;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+    .bg-gradient {
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background: radial-gradient(ellipse at 20% 20%, rgba(251,191,36,0.08) 0%, transparent 50%),
+                  radial-gradient(ellipse at 80% 80%, rgba(139,92,246,0.08) 0%, transparent 50%),
+                  radial-gradient(ellipse at 50% 50%, rgba(16,185,129,0.05) 0%, transparent 70%);
+      pointer-events: none; z-index: 0;
+    }
+    .container { max-width: 900px; margin: 0 auto; padding: 20px; position: relative; z-index: 1; }
+
+    /* Header */
+    .header { text-align: center; padding: 40px 0 30px; }
+    .header h1 {
+      font-size: 2.8em; font-weight: 800;
+      background: linear-gradient(135deg, var(--accent), #f59e0b, var(--accent2));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 8px;
+    }
+    .header .subtitle { color: var(--text-dim); font-size: 1.1em; }
+    .header .badge {
+      display: inline-block; margin-top: 12px;
+      background: linear-gradient(135deg, var(--accent3), #6d28d9);
+      color: white; padding: 6px 16px; border-radius: 20px;
+      font-size: 0.85em; font-weight: 600;
+    }
+
+    /* Tabs */
+    .tabs { display: flex; gap: 8px; margin: 24px 0; flex-wrap: wrap; }
+    .tab {
+      padding: 10px 20px; border-radius: 12px; border: 1px solid var(--border);
+      background: var(--card); color: var(--text-dim); cursor: pointer;
+      font-size: 0.95em; font-weight: 500; transition: all 0.2s;
+    }
+    .tab:hover { background: var(--card-hover); color: var(--text); }
+    .tab.active {
+      background: linear-gradient(135deg, var(--accent), #f59e0b);
+      color: #000; border-color: var(--accent); font-weight: 700;
+    }
+
+    /* Cards */
+    .card {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 16px; padding: 24px; margin-bottom: 20px;
+      transition: all 0.3s;
+    }
+    .card:hover { border-color: var(--accent3); }
+    .card h2 { font-size: 1.3em; margin-bottom: 16px; color: var(--accent); }
+    .card h3 { font-size: 1.1em; margin: 16px 0 8px; color: var(--accent2); }
+
+    /* Forms */
+    label { display: block; margin-bottom: 6px; color: var(--text-dim); font-size: 0.9em; font-weight: 500; }
+    select, input, textarea {
+      width: 100%; padding: 12px 16px; border-radius: 10px;
+      border: 1px solid var(--border); background: var(--bg);
+      color: var(--text); font-size: 1em; margin-bottom: 16px;
+      transition: border-color 0.2s;
+    }
+    select:focus, input:focus, textarea:focus {
+      outline: none; border-color: var(--accent3);
+    }
+    textarea { min-height: 80px; resize: vertical; font-family: inherit; }
+
+    .btn {
+      padding: 12px 28px; border-radius: 12px; border: none;
+      font-size: 1em; font-weight: 700; cursor: pointer;
+      transition: all 0.2s; display: inline-flex; align-items: center; gap: 8px;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent), #f59e0b);
+      color: #000;
+    }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(251,191,36,0.3); }
+    .btn-secondary {
+      background: var(--card); color: var(--text); border: 1px solid var(--border);
+    }
+    .btn-secondary:hover { background: var(--card-hover); }
+    .btn-danger { background: var(--danger); color: white; }
+    .btn-success { background: var(--accent2); color: #000; }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important; }
+
+    /* Prediction cards */
+    .prediction-list { display: flex; flex-direction: column; gap: 12px; }
+    .prediction-item {
+      background: var(--bg); border: 1px solid var(--border);
+      border-radius: 12px; padding: 16px; display: flex;
+      justify-content: space-between; align-items: center;
+      transition: all 0.2s;
+    }
+    .prediction-item:hover { border-color: var(--accent3); }
+    .prediction-item .match { font-weight: 600; }
+    .prediction-item .pick { color: var(--accent); font-weight: 700; }
+    .prediction-item .confidence { color: var(--text-dim); font-size: 0.85em; }
+    .prediction-item .date { color: var(--text-dim); font-size: 0.8em; }
+
+    /* Roast */
+    .roast-card {
+      background: linear-gradient(135deg, rgba(239,68,68,0.1), rgba(139,92,246,0.1));
+      border: 1px solid rgba(239,68,68,0.3);
+      border-radius: 16px; padding: 24px; margin: 16px 0;
+    }
+    .roast-card .roast-text {
+      font-size: 1.1em; line-height: 1.6; font-style: italic;
+      color: var(--accent);
+    }
+    .roast-card .roast-label {
+      font-size: 0.8em; color: var(--danger); font-weight: 700;
+      text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;
+    }
+
+    /* Memory timeline */
+    .memory-timeline { position: relative; padding-left: 30px; }
+    .memory-timeline::before {
+      content: ''; position: absolute; left: 10px; top: 0; bottom: 0;
+      width: 2px; background: linear-gradient(to bottom, var(--accent), var(--accent3));
+    }
+    .memory-item {
+      position: relative; margin-bottom: 20px;
+      background: var(--bg); border: 1px solid var(--border);
+      border-radius: 12px; padding: 16px;
+    }
+    .memory-item::before {
+      content: ''; position: absolute; left: -25px; top: 20px;
+      width: 12px; height: 12px; border-radius: 50%;
+      background: var(--accent); border: 2px solid var(--bg);
+    }
+    .memory-item .session-label {
+      font-size: 0.8em; color: var(--accent3); font-weight: 600;
+      margin-bottom: 4px;
+    }
+    .memory-item .memory-content { font-size: 0.95em; line-height: 1.5; }
+
+    /* Stats */
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; }
+    .stat-card {
+      background: var(--bg); border: 1px solid var(--border);
+      border-radius: 12px; padding: 16px; text-align: center;
+    }
+    .stat-card .value { font-size: 2em; font-weight: 800; color: var(--accent); }
+    .stat-card .label { font-size: 0.8em; color: var(--text-dim); margin-top: 4px; }
+
+    /* Agent message */
+    .agent-msg {
+      background: linear-gradient(135deg, rgba(139,92,246,0.1), rgba(16,185,129,0.1));
+      border: 1px solid rgba(139,92,246,0.3);
+      border-radius: 16px; padding: 20px; margin: 16px 0;
+    }
+    .agent-msg .agent-name {
+      font-weight: 700; color: var(--accent3); margin-bottom: 8px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .agent-msg .agent-text { line-height: 1.6; }
+
+    /* Wallet section */
+    .wallet-status {
+      display: flex; align-items: center; gap: 8px;
+      padding: 12px 16px; border-radius: 10px; margin-bottom: 16px;
+      font-size: 0.9em;
+    }
+    .wallet-status.connected { background: rgba(34,197,94,0.1); border: 1px solid rgba(34,197,94,0.3); color: var(--success); }
+    .wallet-status.disconnected { background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3); color: var(--danger); }
+    .wallet-status .dot { width: 8px; height: 8px; border-radius: 50%; }
+    .wallet-status.connected .dot { background: var(--success); }
+    .wallet-status.disconnected .dot { background: var(--danger); }
+
+    /* Loading */
+    .loading { text-align: center; padding: 40px; color: var(--text-dim); }
+    .spinner {
+      display: inline-block; width: 24px; height: 24px;
+      border: 3px solid var(--border); border-top-color: var(--accent);
+      border-radius: 50%; animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Toast */
+    .toast {
+      position: fixed; bottom: 20px; right: 20px;
+      background: var(--card); border: 1px solid var(--accent3);
+      border-radius: 12px; padding: 16px 24px;
+      color: var(--text); z-index: 1000;
+      animation: slideIn 0.3s ease;
+      max-width: 400px;
+    }
+    @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+    /* Responsive */
+    @media (max-width: 600px) {
+      .header h1 { font-size: 2em; }
+      .tabs { gap: 6px; }
+      .tab { padding: 8px 14px; font-size: 0.85em; }
+      .stats-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    .hidden { display: none !important; }
+
+    /* Demo mode banner */
+    .demo-banner {
+      background: linear-gradient(135deg, rgba(16,185,129,0.15), rgba(251,191,36,0.15));
+      border: 1px solid rgba(16,185,129,0.3);
+      border-radius: 12px; padding: 12px 20px; margin-bottom: 20px;
+      display: flex; align-items: center; gap: 10px; font-size: 0.9em;
+    }
+    .demo-banner .icon { font-size: 1.3em; }
+  </style>
+</head>
+<body>
+  <div class="bg-gradient"></div>
+  <div class="container">
+    <!-- Header -->
+    <div class="header">
+      <h1>🔮 World Cup Oracle</h1>
+      <p class="subtitle">AI Agent with Persistent Memory on Walrus — FIFA World Cup 2026</p>
+      <span class="badge">🏆 Walrus Memory World Cup Hackathon</span>
+    </div>
+
+    <!-- Wallet Status -->
+    <div id="walletStatus" class="wallet-status disconnected">
+      <span class="dot"></span>
+      <span id="walletText">Wallet not connected — Running in Demo Mode</span>
+    </div>
+
+    <!-- Demo Banner -->
+    <div class="demo-banner" id="demoBanner">
+      <span class="icon">⚡</span>
+      <span><strong>Demo Mode:</strong> Memory stored locally. Connect Sui wallet to persist on Walrus Mainnet.</span>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs">
+      <div class="tab active" onclick="switchTab('predict')">🔮 Predict</div>
+      <div class="tab" onclick="switchTab('memory')">🧠 Memory</div>
+      <div class="tab" onclick="switchTab('roast')">🔥 Roast</div>
+      <div class="tab" onclick="switchTab('stats')">📊 Stats</div>
+      <div class="tab" onclick="switchTab('agent')">🤖 Agent Chat</div>
+    </div>
+
+    <!-- Predict Tab -->
+    <div id="tab-predict">
+      <div class="card">
+        <h2>🎯 Make Your Prediction</h2>
+        <label>Select Match</label>
+        <select id="matchSelect">
+          <option value="">Loading matches...</option>
+        </select>
+
+        <label>Your Pick</label>
+        <select id="pickSelect">
+          <option value="">Select match first</option>
+        </select>
+
+        <label>Confidence (1-10)</label>
+        <input type="range" id="confidence" min="1" max="10" value="5" oninput="document.getElementById('confVal').textContent=this.value" />
+        <div style="text-align:center; margin-bottom:16px; color:var(--accent); font-weight:700; font-size:1.3em;">Confidence: <span id="confVal">5</span>/10</div>
+
+        <label>Your Reasoning (optional)</label>
+        <textarea id="reasoning" placeholder="Why do you think this? The agent will remember and roast you later..."></textarea>
+
+        <button class="btn btn-primary" onclick="submitPrediction()" id="submitBtn">🔮 Submit Prediction</button>
+      </div>
+
+      <div class="card">
+        <h2>📋 Your Predictions</h2>
+        <div id="predictionList" class="prediction-list">
+          <div class="loading">No predictions yet. Make your first one!</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Memory Tab -->
+    <div id="tab-memory" class="hidden">
+      <div class="card">
+        <h2>🧠 Agent's Memory of You</h2>
+        <p style="color:var(--text-dim); margin-bottom:16px;">
+          This is what the Oracle remembers about you across sessions. Stored on Walrus.
+        </p>
+        <div id="memoryTimeline" class="memory-timeline">
+          <div class="loading"><div class="spinner"></div> Loading memory...</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>💾 Memory Storage</h2>
+        <button class="btn btn-primary" onclick="saveMemoryToWalrus()" id="saveBtn">💾 Save Memory to Walrus</button>
+        <button class="btn btn-secondary" onclick="loadMemoryFromWalrus()" style="margin-left:8px;" id="loadBtn">🔄 Load from Walrus</button>
+        <div id="memoryStatus" style="margin-top:12px; color:var(--text-dim); font-size:0.9em;"></div>
+      </div>
+    </div>
+
+    <!-- Roast Tab -->
+    <div id="tab-roast" class="hidden">
+      <div class="card">
+        <h2>🔥 Prediction Roast</h2>
+        <p style="color:var(--text-dim); margin-bottom:16px;">
+          The Oracle has been watching your predictions. Here's what it thinks of your track record.
+        </p>
+        <button class="btn btn-danger" onclick="generateRoast()" id="roastBtn">🔥 Roast My Predictions</button>
+        <div id="roastContainer"></div>
+      </div>
+    </div>
+
+    <!-- Stats Tab -->
+    <div id="tab-stats" class="hidden">
+      <div class="card">
+        <h2>📊 Your Prediction Stats</h2>
+        <div class="stats-grid" id="statsGrid">
+          <div class="stat-card"><div class="value" id="statTotal">0</div><div class="label">Total Predictions</div></div>
+          <div class="stat-card"><div class="value" id="statCorrect">0</div><div class="label">Correct</div></div>
+          <div class="stat-card"><div class="value" id="statAccuracy">0%</div><div class="label">Accuracy</div></div>
+          <div class="stat-card"><div class="value" id="statStreak">0</div><div class="label">Win Streak</div></div>
+          <div class="stat-card"><div class="value" id="statAvgConf">0</div><div class="label">Avg Confidence</div></div>
+          <div class="stat-card"><div class="value" id="statSessions">1</div><div class="label">Sessions</div></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>🎭 Personality Profile</h2>
+        <div id="personalityProfile" class="agent-msg">
+          <div class="agent-name">🔮 Oracle</div>
+          <div class="agent-text" id="personalityText">
+            Make at least 3 predictions and I'll analyze your personality...
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Agent Chat Tab -->
+    <div id="tab-agent" class="hidden">
+      <div class="card">
+        <h2>🤖 Chat with the Oracle</h2>
+        <p style="color:var(--text-dim); margin-bottom:16px;">
+          The Oracle remembers everything you've predicted. Ask it about your track record, biases, or World Cup takes.
+        </p>
+        <div id="chatHistory" style="max-height:400px; overflow-y:auto; margin-bottom:16px;">
+          <div class="agent-msg">
+            <div class="agent-name">🔮 Oracle</div>
+            <div class="agent-text">
+              Greetings, mortal. I am the World Cup Oracle. I remember every prediction you've made, every hot take you've had, every moment of glory and despair. Ask me anything about your World Cup journey.
+            </div>
+          </div>
+        </div>
+        <div style="display:flex; gap:8px;">
+          <input type="text" id="chatInput" placeholder="Ask the Oracle..." onkeypress="if(event.key==='Enter')sendChat()" style="flex:1; margin-bottom:0;" />
+          <button class="btn btn-primary" onclick="sendChat()">Send</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ============================================================
+    // WORLD CUP ORACLE — Walrus Memory Agent
+    // Hackathon: Walrus Memory World Cup
+    // ============================================================
+
+    // --- State ---
+    let state = {
+      predictions: [],
+      memories: [],
+      sessions: 1,
+      wallet: null,
+      demoMode: true,
+      currentSession: 1,
+      personalityTraits: {}
+    };
+
+    // --- World Cup 2026 Mock Data ---
+    const WORLD_CUP_MATCHES = [
+      { id: 1, group: "Group A", team1: "🇲🇽 Mexico", team2: "🇦🇷 Argentina", date: "2026-06-11" },
+      { id: 2, group: "Group A", team1: "🇨🇦 Canada", team2: "🇲🇦 Morocco", date: "2026-06-11" },
+      { id: 3, group: "Group B", team1: "🇧🇷 Brazil", team2: "🇬🇧 England", date: "2026-06-12" },
+      { id: 4, group: "Group B", team1: "🇫🇷 France", team2: "🇩🇪 Germany", date: "2026-06-12" },
+      { id: 5, group: "Group C", team1: "🇪🇸 Spain", team2: "🇵🇹 Portugal", date: "2026-06-13" },
+      { id: 6, group: "Group C", team1: "🇮🇹 Italy", team2: "🇳🇱 Netherlands", date: "2026-06-13" },
+      { id: 7, group: "Group D", team1: "🇧🇪 Belgium", team2: "🇭🇷 Croatia", date: "2026-06-14" },
+      { id: 8, group: "Group D", team1: "🇺🇾 Uruguay", team2: "🇨🇱 Chile", date: "2026-06-14" },
+      { id: 9, group: "Group E", team1: "🇯🇵 Japan", team2: "🇰🇷 South Korea", date: "2026-06-15" },
+      { id: 10, group: "Group E", team1: "🇺🇸 USA", team2: "🇨🇭 Switzerland", date: "2026-06-15" },
+      { id: 11, group: "Group F", team1: "🇸🇦 Saudi Arabia", team2: "🇳🇬 Nigeria", date: "2026-06-16" },
+      { id: 12, group: "Group F", team1: "🇬🇭 Ghana", team2: "🇨🇲 Cameroon", date: "2026-06-16" },
+      { id: 13, group: "Group G", team1: "🇦🇺 Australia", team2: "🇷🇸 Serbia", date: "2026-06-17" },
+      { id: 14, group: "Group G", team1: "🇵🇱 Poland", team2: "🇸🇪 Sweden", date: "2026-06-17" },
+      { id: 15, group: "Group H", team1: "🇹🇳 Tunisia", team2: "🇮🇷 Iran", date: "2026-06-18" },
+      { id: 16, group: "Group H", team1: "🇨🇴 Colombia", team2: "🇨🇳 China", date: "2026-06-18" },
+    ];
+
+    // --- Initialize ---
+    function init() {
+      loadState();
+      populateMatches();
+      renderPredictions();
+      renderMemory();
+      renderStats();
+      updatePersonality();
+    }
+
+    // --- Tab Switching ---
+    function switchTab(tab) {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('[id^="tab-"]').forEach(d => d.classList.add('hidden'));
+      document.querySelector(`.tab[onclick="switchTab('${tab}')"]`).classList.add('active');
+      document.getElementById(`tab-${tab}`).classList.remove('hidden');
+    }
+
+    // --- Match Selection ---
+    function populateMatches() {
+      const sel = document.getElementById('matchSelect');
+      sel.innerHTML = '<option value="">Choose a match...</option>' +
+        WORLD_CUP_MATCHES.map(m => `<option value="${m.id}">${m.date} — ${m.team1} vs ${m.team2}</option>`).join('');
+      sel.onchange = updatePickOptions;
+    }
+
+    function updatePickOptions() {
+      const matchId = parseInt(document.getElementById('matchSelect').value);
+      const match = WORLD_CUP_MATCHES.find(m => m.id === matchId);
+      const pickSel = document.getElementById('pickSelect');
+      if (!match) {
+        pickSel.innerHTML = '<option value="">Select match first</option>';
+        return;
+      }
+      pickSel.innerHTML = `
+        <option value="${match.team1}">${match.team1} Win</option>
+        <option value="${match.team2}">${match.team2} Win</option>
+        <option value="Draw">Draw</option>
+      `;
+    }
+
+    // --- Prediction ---
+    function submitPrediction() {
+      const matchId = parseInt(document.getElementById('matchSelect').value);
+      const pick = document.getElementById('pickSelect').value;
+      const confidence = parseInt(document.getElementById('confidence').value);
+      const reasoning = document.getElementById('reasoning').value;
+
+      if (!matchId || !pick) {
+        showToast('⚠️ Please select a match and pick!');
+        return;
+      }
+
+      const match = WORLD_CUP_MATCHES.find(m => m.id === matchId);
+      const prediction = {
+        id: Date.now(),
+        matchId,
+        match: `${match.team1} vs ${match.team2}`,
+        team1: match.team1,
+        team2: match.team2,
+        pick,
+        confidence,
+        reasoning,
+        date: new Date().toISOString(),
+        session: state.currentSession,
+        correct: null // will be determined after match
+      };
+
+      state.predictions.push(prediction);
+
+      // Generate memory from this prediction
+      generateMemoryFromPrediction(prediction, match);
+
+      saveState();
+      renderPredictions();
+      renderMemory();
+      renderStats();
+      updatePersonality();
+
+      // Reset form
+      document.getElementById('matchSelect').value = '';
+      document.getElementById('pickSelect').value = '';
+      document.getElementById('confidence').value = 5;
+      document.getElementById('confVal').textContent = '5';
+      document.getElementById('reasoning').value = '';
+
+      showToast('🔮 Prediction recorded! The Oracle remembers...');
+    }
+
+    function generateMemoryFromPrediction(pred, match) {
+      const memories = [];
+
+      // Memory: what they picked
+      memories.push({
+        id: Date.now() + Math.random(),
+        session: state.currentSession,
+        type: 'prediction',
+        content: `Predicted "${pred.pick}" for ${match.team1} vs ${match.team2} with confidence ${pred.confidence}/10`,
+        timestamp: new Date().toISOString()
+      });
+
+      // Memory: reasoning
+      if (pred.reasoning) {
+        memories.push({
+          id: Date.now() + Math.random() + 1,
+          session: state.currentSession,
+          type: 'reasoning',
+          content: `Reasoning: "${pred.reasoning}"`,
+          timestamp: new Date().toISOString()
+        });
+      }
+
+      // Memory: confidence pattern
+      if (pred.confidence >= 8) {
+        memories.push({
+          id: Date.now() + Math.random() + 2,
+          session: state.currentSession,
+          type: 'trait',
+          content: 'Tends to be very confident in predictions (8+/10)',
+          timestamp: new Date().toISOString()
+        });
+      } else if (pred.confidence <= 3) {
+        memories.push({
+          id: Date.now() + Math.random() + 2,
+          session: state.currentSession,
+          type: 'trait',
+          content: 'Tends to be cautious in predictions (≤3/10)',
+          timestamp: new Date().toISOString()
+        });
+      }
+
+      // Memory: team preference detection
+      const teamPicks = state.predictions.filter(p =>
+        p.pick.includes(match.team1) || p.pick.includes(match.team2)
+      );
+      if (teamPicks.length >= 2) {
+        const favTeam = teamPicks[0].pick;
+        memories.push({
+          id: Date.now() + Math.random() + 3,
+          session: state.currentSession,
+          type: 'preference',
+          content: `Seems to favor ${favTeam} — picked them ${teamPicks.length} times`,
+          timestamp: new Date().toISOString()
+        });
+      }
+
+      state.memories = [...state.memories, ...memories];
+    }
+
+    // --- Render ---
+    function renderPredictions() {
+      const list = document.getElementById('predictionList');
+      if (state.predictions.length === 0) {
+        list.innerHTML = '<div class="loading">No predictions yet. Make your first one!</div>';
+        return;
+      }
+      list.innerHTML = state.predictions.slice().reverse().map(p => `
+        <div class="prediction-item">
+          <div>
+            <div class="match">${p.match}</div>
+            <div class="confidence">Confidence: ${p.confidence}/10 • Session ${p.session}</div>
+            ${p.reasoning ? `<div style="color:var(--text-dim);font-size:0.85em;margin-top:4px;">"${p.reasoning}"</div>` : ''}
+          </div>
+          <div class="pick">${p.pick}</div>
+        </div>
+      `).join('');
+    }
+
+    function renderMemory() {
+      const timeline = document.getElementById('memoryTimeline');
+      if (state.memories.length === 0) {
+        timeline.innerHTML = '<div class="loading">No memories yet. Make predictions to build memory!</div>';
+        return;
+      }
+      timeline.innerHTML = state.memories.slice().reverse().map(m => {
+        const icon = m.type === 'prediction' ? '🔮' : m.type === 'reasoning' ? '💭' : m.type === 'trait' ? '🎭' : '❤️';
+        return `
+          <div class="memory-item">
+            <div class="session-label">Session ${m.session} • ${icon} ${m.type}</div>
+            <div class="memory-content">${m.content}</div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderStats() {
+      const total = state.predictions.length;
+      const correct = state.predictions.filter(p => p.correct === true).length;
+      const accuracy = total > 0 ? Math.round((correct / total) * 100) : 0;
+      const avgConf = total > 0 ? (state.predictions.reduce((s, p) => s + p.confidence, 0) / total).toFixed(1) : 0;
+
+      // Calculate streak
+      let streak = 0;
+      for (let i = state.predictions.length - 1; i >= 0; i--) {
+        if (state.predictions[i].correct === true) streak++;
+        else break;
+      }
+
+      document.getElementById('statTotal').textContent = total;
+      document.getElementById('statCorrect').textContent = correct;
+      document.getElementById('statAccuracy').textContent = accuracy + '%';
+      document.getElementById('statStreak').textContent = streak;
+      document.getElementById('statAvgConf').textContent = avgConf;
+      document.getElementById('statSessions').textContent = state.sessions;
+    }
+
+    // --- Personality Analysis ---
+    function updatePersonality() {
+      const text = document.getElementById('personalityText');
+      const preds = state.predictions;
+
+      if (preds.length < 3) {
+        text.textContent = 'Make at least 3 predictions and I\'ll analyze your personality...';
+        return;
+      }
+
+      const avgConf = preds.reduce((s, p) => s + p.confidence, 0) / preds.length;
+      const highConf = preds.filter(p => p.confidence >= 8).length;
+      const lowConf = preds.filter(p => p.confidence <= 3).length;
+      const draws = preds.filter(p => p.pick === 'Draw').length;
+
+      // Detect favorite team
+      const teamCounts = {};
+      preds.forEach(p => {
+        [p.team1, p.team2].forEach(t => {
+          if (p.pick.includes(t)) teamCounts[t] = (teamCounts[t] || 0) + 1;
+        });
+      });
+      const favTeam = Object.entries(teamCounts).sort((a, b) => b[1] - a[1])[0];
+
+      let traits = [];
+      if (avgConf >= 7) traits.push('bold and confident');
+      else if (avgConf <= 4) traits.push('cautious and hedging');
+      else traits.push('measured and balanced');
+
+      if (highConf >= preds.length * 0.5) traits.push('overconfident');
+      if (lowConf >= preds.length * 0.5) traits.push('risk-averse');
+      if (draws >= 2) traits.push('loves a draw');
+      if (favTeam) traits.push(`has a soft spot for ${favTeam[0]}`);
+
+      const archetypes = [
+        'The Oracle sees you as a **' + traits.slice(0, 2).join(' ') + '** predictor.',
+        avgConf >= 7
+          ? 'You swing for the fences. Respect. But the Oracle also notices you\'ve been wrong before — and it never forgets.'
+          : 'You play it safe. The Oracle respects consistency, but where\'s the passion?',
+        favTeam ? `Your loyalty to ${favTeam[0]} is noted. Whether this is wisdom or bias remains to be seen.` : 'No clear team loyalty detected. You\'re a true neutral analyst.',
+        `After ${preds.length} predictions across ${state.sessions} session(s), the Oracle has formed an opinion. Use it wisely — or ignore it entirely. Your call.`
+      ];
+
+      text.innerHTML = archetypes.join('<br><br>');
+    }
+
+    // --- Roast ---
+    function generateRoast() {
+      const preds = state.predictions;
+      if (preds.length < 2) {
+        showToast('⚠️ Make at least 2 predictions before getting roasted!');
+        return;
+      }
+
+      const container = document.getElementById('roastContainer');
+      const avgConf = preds.reduce((s, p) => s + p.confidence, 0) / preds.length;
+      const highConf = preds.filter(p => p.confidence >= 8);
+      const draws = preds.filter(p => p.pick === 'Draw');
+
+      let roasts = [];
+
+      // Roast: overconfidence
+      if (highConf.length >= 2) {
+        roasts.push(`Oh, look at you with your ${highConf.length} "confidence 8+" picks. You're either a genius or delusional. The Oracle is leaning towards delusional. 🔮`);
+      }
+
+      // Roast: too cautious
+      if (avgConf <= 4) {
+        roasts.push(`Average confidence of ${avgConf.toFixed(1)}? You're more cautious than a cat in a room full of rocking chairs. Pick a lane, mortal. 🐱`);
+      }
+
+      // Roast: draw lover
+      if (draws.length >= 2) {
+        roasts.push(`${draws.length} draws? You're the kind of person who orders vanilla at an ice cream shop with 37 flavors. Live a little! 🍦`);
+      }
+
+      // Roast: team bias
+      const teamCounts = {};
+      preds.forEach(p => {
+        if (p.pick !== 'Draw') {
+          teamCounts[p.pick] = (teamCounts[p.pick] || 0) + 1;
+        }
+      });
+      const biased = Object.entries(teamCounts).filter(([t, c]) => c >= 3);
+      if (biased.length > 0) {
+        roasts.push(`${biased[0][0]} again? You've picked them ${biased[0][1]} times. Either you're a true believer or you need new friends. The Oracle suspects both. 😏`);
+      }
+
+      // Roast: session-based memory
+      if (state.sessions >= 2) {
+        roasts.push(`The Oracle has watched you across ${state.sessions} sessions now. You keep coming back, but your predictions haven't improved. At this point, it's not about winning — it's about the journey. A losing journey. 📉`);
+      }
+
+      // Roast: reasoning patterns
+      const withReasoning = preds.filter(p => p.reasoning && p.reasoning.length > 20);
+      if (withReasoning.length >= 2) {
+        roasts.push(`You write essays for your predictions. "${withReasoning[0].reasoning.substring(0, 50)}..." — buddy, it's a football match, not a PhD thesis. 📝`);
+      }
+
+      // Default roast
+      if (roasts.length === 0) {
+        roasts.push(`The Oracle has analyzed your ${preds.length} predictions and concluded: you're aggressively mediocre. Not terrible enough to be entertaining, not good enough to be respected. The worst kind of predictor. 😴`);
+      }
+
+      container.innerHTML = roasts.map(r => `
+        <div class="roast-card">
+          <div class="roast-label">🔥 Oracle Roast</div>
+          <div class="roast-text">${r}</div>
+        </div>
+      `).join('');
+
+      // Save roast as memory
+      state.memories.push({
+        id: Date.now(),
+        session: state.currentSession,
+        type: 'roast',
+        content: `Generated roast after ${preds.length} predictions. Key theme: ${roasts[0].substring(0, 80)}...`,
+        timestamp: new Date().toISOString()
+      });
+      saveState();
+    }
+
+    // --- Agent Chat ---
+    function sendChat() {
+      const input = document.getElementById('chatInput');
+      const msg = input.value.trim();
+      if (!msg) return;
+
+      const history = document.getElementById('chatHistory');
+
+      // Add user message
+      history.innerHTML += `
+        <div style="text-align:right; margin-bottom:12px;">
+          <div style="display:inline-block; background:var(--accent3); color:white; padding:10px 16px; border-radius:12px 12px 0 12px; max-width:80%;">
+            ${msg}
+          </div>
+        </div>
+      `;
+
+      // Generate agent response
+      const response = generateAgentResponse(msg);
+      setTimeout(() => {
+        history.innerHTML += `
+          <div class="agent-msg" style="margin-bottom:12px;">
+            <div class="agent-name">🔮 Oracle</div>
+            <div class="agent-text">${response}</div>
+          </div>
+        `;
+        history.scrollTop = history.scrollHeight;
+      }, 500 + Math.random() * 1000);
+
+      input.value = '';
+      history.scrollTop = history.scrollHeight;
+    }
+
+    function generateAgentResponse(msg) {
+      const preds = state.predictions;
+      const lower = msg.toLowerCase();
+
+      // Questions about predictions
+      if (lower.includes('prediction') || lower.includes('predict')) {
+        if (preds.length === 0) return "You haven't made any predictions yet! The Oracle is waiting. Make your first prediction and I'll remember it forever.";
+        return `You've made ${preds.length} prediction(s). Your most recent: "${preds[preds.length-1].pick}" with confidence ${preds[preds.length-1].confidence}/10. The Oracle is watching. 🔮`;
+      }
+
+      // Questions about accuracy
+      if (lower.includes('accuracy') || lower.includes('correct') || lower.includes('right')) {
+        if (preds.length < 2) return "Not enough data yet. Make more predictions and I'll tell you exactly how wrong you are.";
+        const correct = preds.filter(p => p.correct === true).length;
+        const accuracy = Math.round((correct / preds.length) * 100);
+        return `Your accuracy is ${accuracy}%. ${accuracy >= 50 ? "Not bad, mortal." : "Yikes. The Oracle has seen better."} Out of ${preds.length} predictions, ${correct} were correct.`;
+      }
+
+      // Questions about bias
+      if (lower.includes('bias') || lower.includes('favorite') || lower.includes('favour')) {
+        const teamCounts = {};
+        preds.forEach(p => {
+          if (p.pick !== 'Draw') teamCounts[p.pick] = (teamCounts[p.pick] || 0) + 1;
+        });
+        const sorted = Object.entries(teamCounts).sort((a, b) => b[1] - a[1]);
+        if (sorted.length === 0) return "No clear bias detected yet. You're either very balanced or very indecisive.";
+        return `The Oracle has detected a pattern. You favor ${sorted[0][0]} (${sorted[0][1]} picks). ${sorted.length > 1 ? `Secondary bias: ${sorted[1][0]} (${sorted[1][1]} picks).` : ''} Interesting...`;
+      }
+
+      // Questions about memory
+      if (lower.includes('memory') || lower.includes('remember')) {
+        if (state.memories.length === 0) return "I don't remember anything yet. Make some predictions and I'll build my memory of you.";
+        return `I remember ${state.memories.length} things about you across ${state.sessions} session(s). ${state.memories[state.memories.length-1].content} — that's what you did most recently. I never forget.`;
+      }
+
+      // Questions about the World Cup
+      if (lower.includes('world cup') || lower.includes('2026')) {
+        return "The 2026 FIFA World Cup is being held across the USA, Canada, and Mexico. 48 teams, 104 matches, one champion. The Oracle will remember every prediction you make throughout the tournament. Choose wisely.";
+      }
+
+      // Questions about Walrus
+      if (lower.includes('walrus') || lower.includes('blockchain') || lower.includes('decentralized')) {
+        return "This agent runs on Walrus — a decentralized storage protocol built on Sui. Your memories are stored as blobs on Walrus, making them persistent, verifiable, and censorship-resistant. Even if this app disappears, your predictions live on. 🦭";
+      }
+
+      // Roast request
+      if (lower.includes('roast') || lower.includes('burn') || lower.includes('insult')) {
+        if (preds.length < 2) return "The Oracle needs at least 2 predictions before roasting you. Come back when you've embarrassed yourself a bit more.";
+        const avgConf = preds.reduce((s, p) => s + p.confidence, 0) / preds.length;
+        return `Fine, you asked for it. With an average confidence of ${avgConf.toFixed(1)}/10 across ${preds.length} predictions, you're ${avgConf >= 7 ? 'overconfident and probably wrong' : 'so cautious you might actually be right, but where\'s the fun in that?'}. The Oracle has spoken. 🔥`;
+      }
+
+      // Default responses with memory awareness
+      const defaults = [
+        `Interesting question. The Oracle has ${preds.length} predictions and ${state.memories.length} memories stored. What specifically do you want to know?`,
+        `The Oracle knows you've made ${preds.length} prediction(s). Ask me about your accuracy, biases, or favorite teams and I'll reveal what I've learned.`,
+        `I've been watching you across ${state.sessions} session(s). I remember everything. Try asking about your predictions, accuracy, or personality.`,
+        `The Oracle is all-knowing but not all-telling. Ask me something specific — your predictions, your biases, your track record. I have data. 🔮`
+      ];
+
+      return defaults[Math.floor(Math.random() * defaults.length)];
+    }
+
+    // --- Walrus Integration (Demo + Real) ---
+    async function saveMemoryToWalrus() {
+      const status = document.getElementById('memoryStatus');
+      const saveBtn = document.getElementById('saveBtn');
+
+      if (state.demoMode) {
+        // Demo mode: simulate Walrus storage
+        saveBtn.disabled = true;
+        saveBtn.innerHTML = '<div class="spinner"></div> Storing...';
+
+        await new Promise(r => setTimeout(r, 1500));
+
+        const blob = JSON.stringify({
+          predictions: state.predictions,
+          memories: state.memories,
+          sessions: state.sessions,
+          timestamp: new Date().toISOString()
+        });
+
+        // In demo, store in localStorage as "Walrus blob"
+        localStorage.setItem('walrus_memory_blob', blob);
+        const mockBlobId = '0x' + Array.from({length: 64}, () => Math.floor(Math.random()*16).toString(16)).join('');
+
+        status.innerHTML = `✅ Memory "stored" on Walrus (Demo) — Blob ID: <code style="color:var(--accent3)">${mockBlobId.substring(0, 16)}...</code> — ${blob.length} bytes`;
+        saveBtn.disabled = false;
+        saveBtn.innerHTML = '💾 Save Memory to Walrus';
+        showToast('💾 Memory saved! (Demo mode — connect wallet for real Walrus storage)');
+        return;
+      }
+
+      // Real Walrus storage would go here using @mysten/walrus SDK
+      status.innerHTML = '⏳ Connect your Sui wallet first...';
+    }
+
+    async function loadMemoryFromWalrus() {
+      const status = document.getElementById('memoryStatus');
+
+      if (state.demoMode) {
+        const blob = localStorage.getItem('walrus_memory_blob');
+        if (!blob) {
+          status.innerHTML = '❌ No memory blob found. Make predictions first!';
+          return;
+        }
+        const data = JSON.parse(blob);
+        status.innerHTML = `✅ Memory loaded from Walrus (Demo) — ${data.memories.length} memories, ${data.predictions.length} predictions`;
+        showToast('🔄 Memory loaded! (Demo mode)');
+        return;
+      }
+    }
+
+    // --- State Persistence ---
+    function saveState() {
+      const data = {
+        predictions: state.predictions,
+        memories: state.memories,
+        sessions: state.sessions,
+        currentSession: state.currentSession
+      };
+      localStorage.setItem('world_cup_oracle_state', JSON.stringify(data));
+    }
+
+    function loadState() {
+      const saved = localStorage.getItem('world_cup_oracle_state');
+      if (saved) {
+        const data = JSON.parse(saved);
+        state.predictions = data.predictions || [];
+        state.memories = data.memories || [];
+        state.sessions = data.sessions || 1;
+        state.currentSession = data.currentSession || 1;
+      }
+    }
+
+    // --- Toast ---
+    function showToast(msg) {
+      const toast = document.createElement('div');
+      toast.className = 'toast';
+      toast.textContent = msg;
+      document.body.appendChild(toast);
+      setTimeout(() => toast.remove(), 3000);
+    }
+
+    // --- New Session (simulate time passing) ---
+    function newSession() {
+      state.sessions++;
+      state.currentSession = state.sessions;
+      state.memories.push({
+        id: Date.now(),
+        session: state.currentSession,
+        type: 'session',
+        content: `New session started. The Oracle has ${state.predictions.length} predictions and ${state.memories.length} memories from previous sessions.`,
+        timestamp: new Date().toISOString()
+      });
+      saveState();
+      renderMemory();
+      renderStats();
+      showToast(`🧠 Session ${state.currentSession} started! The Oracle remembers everything from before...`);
+    }
+
+    // Add new session button
+    document.addEventListener('DOMContentLoaded', () => {
+      init();
+
+      // Add session button to memory tab
+      const memoryTab = document.getElementById('tab-memory');
+      const sessionBtn = document.createElement('button');
+      sessionBtn.className = 'btn btn-secondary';
+      sessionBtn.textContent = '⏭️ New Session (Simulate Day N+1)';
+      sessionBtn.style.marginTop = '12px';
+      sessionBtn.onclick = newSession;
+      memoryTab.querySelector('.card:nth-child(2)').appendChild(sessionBtn);
+    });
+  </script>
+</body>
+</html>
