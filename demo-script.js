@@ -1,265 +1,248 @@
-// ============================================================
-// WORLD CUP ORACLE — DEMO SCRIPT FOR HACKATHON VIDEO
-// Copy-paste this entire script into browser console (F12)
-// Run on: https://Wadefak04.github.io/world-cup-oracle/ or local file
-// ============================================================
-
-(function() {
-  console.log('%c🔮 WORLD CUP ORACLE — DEMO SCRIPT STARTED', 'font-size:20px;color:#fbbf24;font-weight:bold');
-  console.log('%cRecord your screen now! This script will demonstrate all features.', 'font-size:14px;color:#9ca3af');
-
-  // --- Helper: Wait for element ---
-  const waitFor = (selector, timeout = 5000) => new Promise((resolve, reject) => {
-    const el = document.querySelector(selector);
-    if (el) return resolve(el);
-    const observer = new MutationObserver(() => {
-      const el = document.querySelector(selector);
-      if (el) { observer.disconnect(); resolve(el); }
-    });
-    observer.observe(document.body, { childList: true, subtree: true });
-    setTimeout(() => { observer.disconnect(); reject(new Error(`Timeout: ${selector}`)); }, timeout);
-  });
-
-  // --- Helper: Type into input ---
-  const typeInto = (selector, text) => waitFor(selector).then(el => {
-    el.focus();
-    el.value = text;
-    el.dispatchEvent(new Event('input', { bubbles: true }));
-    el.dispatchEvent(new Event('change', { bubbles: true }));
-  });
-
-  // --- Helper: Click ---
-  const clickEl = (selector) => waitFor(selector).then(el => el.click());
-
-  // --- Helper: Sleep ---
-  const sleep = (ms) => new Promise(r => setTimeout(r, ms));
-
-  // --- Helper: Log step ---
-  const step = (msg) => console.log(`%c▶ ${msg}`, 'font-size:14px;color:#10b981;font-weight:bold');
-
-  // --- MAIN DEMO SEQUENCE ---
-  async function runDemo() {
-    try {
-      // ==================================================
-      // STEP 1: Landing page
-      // ==================================================
-      step('STEP 1: Show landing page - World Cup Oracle header');
-      await sleep(2000);
-
-      step('STEP 2: Show wallet status (Demo Mode)');
-      await sleep(1000);
-
-      // ==================================================
-      // STEP 3: Make first prediction
-      // ==================================================
-      step('STEP 3: Make first prediction — Mexico vs Argentina');
-      await clickEl('#matchSelect');
-      await sleep(300);
-      await typeInto('#matchSelect', '1'); // Mexico vs Argentina
-      await sleep(500);
-      await clickEl('#pickSelect');
-      await sleep(300);
-      const pickEl = document.querySelector('#pickSelect');
-      if (pickEl) pickEl.value = '🇲🇽 Mexico';
-      await sleep(300);
-
-      await typeInto('#confidence', '9');
-      document.getElementById('confVal').textContent = '9';
-      await sleep(300);
-
-      await typeInto('#reasoning', 'Mexico has home advantage in 2026 and Argentina\'s defense is aging. El Tri will shock the world!');
-      await sleep(500);
-
-      await clickEl('#submitBtn');
-      await sleep(1000);
-
-      // ==================================================
-      // STEP 4: Second prediction
-      // ==================================================
-      step('STEP 4: Second prediction — Brazil vs England (Draw)');
-      await typeInto('#matchSelect', '3');
-      await sleep(300);
-      const pickEl2 = document.querySelector('#pickSelect');
-      if (pickEl2) pickEl2.value = 'Draw';
-      await sleep(300);
-      await typeInto('#confidence', '6');
-      document.getElementById('confVal').textContent = '6';
-      await sleep(300);
-      await typeInto('#reasoning', 'Both teams strong but cancels out. Tactical draw likely.');
-      await sleep(500);
-      await clickEl('#submitBtn');
-      await sleep(1000);
-
-      // ==================================================
-      // STEP 5: Third prediction (show bias)
-      // ==================================================
-      step('STEP 5: Third prediction — Mexico again (show team bias)');
-      await typeInto('#matchSelect', '1');
-      await sleep(300);
-      const pickEl3 = document.querySelector('#pickSelect');
-      if (pickEl3) pickEl3.value = '🇲🇽 Mexico';
-      await sleep(300);
-      await typeInto('#confidence', '8');
-      document.getElementById('confVal').textContent = '8';
-      await sleep(300);
-      await typeInto('#reasoning', 'My gut says Mexico. Always bet on green.');
-      await sleep(500);
-      await clickEl('#submitBtn');
-      await sleep(1000);
-
-      // ==================================================
-      // STEP 6: Show Predictions tab
-      // ==================================================
-      step('STEP 6: Scroll to predictions list - show all 3');
-      await sleep(2000);
-
-      // ==================================================
-      // STEP 7: Switch to Memory tab
-      // ==================================================
-      step('STEP 7: Switch to MEMORY tab - show agent memory');
-      await clickEl('.tab[onclick="switchTab(\'memory\')"]');
-      await sleep(1500);
-      step('Show memory timeline - predictions, reasoning, traits detected');
-      await sleep(3000);
-
-      // ==================================================
-      // STEP 8: Simulate NEW SESSION (Day 4+)
-      // ==================================================
-      step('STEP 8: SIMULATE NEW SESSION (Day 4+) - KEY DEMO MOMENT');
-      // Find the "New Session" button (added dynamically)
-      const sessionBtn = Array.from(document.querySelectorAll('button')).find(b => b.textContent.includes('New Session'));
-      if (sessionBtn) {
-        sessionBtn.click();
-        await sleep(1000);
-        step('Session 2 started! Agent now has memory from Session 1');
-        await sleep(2000);
-      }
-
-      // ==================================================
-      // STEP 9: Make prediction in Session 2
-      // ==================================================
-      step('STEP 9: Make prediction in Session 2 - agent references past');
-      await clickEl('.tab[onclick="switchTab(\'predict\')"]');
-      await sleep(500);
-      await typeInto('#matchSelect', '5'); // Spain vs Portugal
-      await sleep(300);
-      const pickEl4 = document.querySelector('#pickSelect');
-      if (pickEl4) pickEl4.value = '🇪🇸 Spain';
-      await sleep(300);
-      await typeInto('#confidence', '7');
-      document.getElementById('confVal').textContent = '7';
-      await sleep(300);
-      await typeInto('#reasoning', 'Spain possession game beats Portugal counter-attack. Also redeeming my Mexico bias!');
-      await sleep(500);
-      await clickEl('#submitBtn');
-      await sleep(1000);
-
-      // ==================================================
-      // STEP 10: Roast Tab
-      // ==================================================
-      step('STEP 10: ROAST TAB - Agent roasts your predictions');
-      await clickEl('.tab[onclick="switchTab(\'roast\')"]');
-      await sleep(500);
-      await clickEl('#roastBtn');
-      await sleep(2000);
-      step('Read the roast aloud for video!');
-      await sleep(4000);
-
-      // ==================================================
-      // STEP 11: Stats Tab
-      // ==================================================
-      step('STEP 11: STATS TAB - Accuracy, streak, personality profile');
-      await clickEl('.tab[onclick="switchTab(\'stats\')"]');
-      await sleep(1500);
-      step('Show personality profile - agent analyzes your behavior');
-      await sleep(3000);
-
-      // ==================================================
-      // STEP 12: Agent Chat
-      // ==================================================
-      step('STEP 12: AGENT CHAT - Talk to Oracle with memory');
-      await clickEl('.tab[onclick="switchTab(\'agent\')"]');
-      await sleep(500);
-
-      const chatQs = [
-        'What do you remember about my predictions?',
-        'Am I biased toward any team?',
-        'What\'s my accuracy so far?',
-        'Roast me again!',
-        'How does Walrus memory work here?'
-      ];
-
-      for (const q of chatQs) {
-        await typeInto('#chatInput', q);
-        await clickEl('#chatInput + button, button:has-text("Send")');
-        await sleep(2500);
-      }
-
-      // ==================================================
-      // STEP 13: Walrus Memory Storage
-      // ==================================================
-      step('STEP 13: MEMORY TAB - Save/Load from Walrus');
-      await clickEl('.tab[onclick="switchTab(\'memory\')"]');
-      await sleep(500);
-      await clickEl('#saveBtn');
-      await sleep(2000);
-      await clickEl('#loadBtn');
-      await sleep(1500);
-      step('Show memory blob ID - stored on Walrus!');
-
-      // ==================================================
-      // STEP 14: Final wrap
-      // ==================================================
-      step('STEP 14: Summary - All hackathon requirements met!');
-      console.log('%c✅ Walrus Memory integration', 'color:#10b981');
-      console.log('%c✅ Persistent memory across sessions', 'color:#10b981');
-      console.log('%c✅ Day 1 vs Day 4+ behavior difference', 'color:#10b981');
-      console.log('%c✅ Public interface with memory visualization', 'color:#10b981');
-      console.log('%c✅ World Cup 2026 theme', 'color:#10b981');
-      console.log('%c✅ Deployable to Walrus Sites', 'color:#10b981');
-
-      console.log('%c🎬 DEMO COMPLETE - Stop recording!', 'font-size:18px;color:#fbbf24;font-weight:bold');
-      console.log('%c📝 Submit: GitHub + Airtable + DeepSurge + X post #Walrus', 'font-size:14px;color:#8b5cf6');
-
-    } catch (e) {
-      console.error('%c❌ Demo error:', 'color:#ef4444', e);
-      console.log('You can run individual steps manually. Check console for errors.');
-    }
-  }
-
-  // Run it!
-  runDemo();
-})();
+/**
+ * ============================================================
+ * WORLD CUP ORACLE — DEMO SCRIPT
+ * Copy-paste this ENTIRE script into browser console (F12 → Console)
+ * Run each section step by step for the 3-minute demo video
+ * ============================================================
+ */
 
 // ============================================================
-// MANUAL STEP-BY-STEP (if auto script fails, run these individually):
+// SECTION 1: INITIAL STATE CHECK (Day 1 - Fresh Agent)
 // ============================================================
-/*
-// 1. Make prediction
-// document.getElementById('matchSelect').value = '1';
-// document.getElementById('pickSelect').value = '🇲🇽 Mexico';
-// document.getElementById('confidence').value = '9';
-// document.getElementById('confVal').textContent = '9';
-// document.getElementById('reasoning').value = 'Mexico home advantage!';
-// document.getElementById('submitBtn').click();
+console.log('%c=== WORLD CUP ORACLE DEMO - DAY 1 ===', 'color: #fbbf24; font-size: 16px; font-weight: bold;');
+console.log('%cStep 1: Fresh agent - no memory yet', 'color: #10b981; font-size: 14px;');
 
-// 2. Switch tabs
-// document.querySelector('.tab[onclick="switchTab(\'memory\')"]').click();
-// document.querySelector('.tab[onclick="switchTab(\'roast\')"]').click();
-// document.querySelector('.tab[onclick="switchTab(\'stats\')"]').click();
-// document.querySelector('.tab[onclick="switchTab(\'agent\')"]').click();
+// Check current state
+console.log('Predictions:', window.state?.predictions?.length || 0);
+console.log('Memories:', window.state?.memories?.length || 0);
+console.log('Sessions:', window.state?.sessions || 1);
 
-// 3. New session
-// Array.from(document.querySelectorAll('button')).find(b => b.textContent.includes('New Session'))?.click();
+// Navigate to Predict tab
+switchTab('predict');
+console.log('%c✅ On Predict tab', 'color: #10b981;');
 
-// 4. Roast
-// document.getElementById('roastBtn').click();
+// ============================================================
+// SECTION 2: MAKE FIRST PREDICTIONS (Session 1)
+// ============================================================
+console.log('%c\nStep 2: Making first predictions...', 'color: #10b981; font-size: 14px;');
 
-// 5. Chat
-// document.getElementById('chatInput').value = 'What do you remember?';
-// document.querySelector('#chatInput + button').click();
+// Prediction 1: Argentina vs Mexico - pick Argentina with high confidence
+document.getElementById('matchSelect').value = '1'; // Argentina vs Mexico
+updatePickOptions();
+document.getElementById('pickSelect').value = '🇦🇷 Argentina';
+document.getElementById('confidence').value = '9';
+document.getElementById('confVal').textContent = '9';
+document.getElementById('reasoning').value = 'Argentina won 2022, Messi\'s last World Cup, they\'re destiny';
+submitPrediction();
 
-// 6. Save to Walrus
-// document.getElementById('saveBtn').click();
-// document.getElementById('loadBtn').click();
-*/
+// Wait a bit
+await new Promise(r => setTimeout(r, 500));
+
+// Prediction 2: Brazil vs England - pick Draw (shows draw bias)
+document.getElementById('matchSelect').value = '3'; // Brazil vs England
+updatePickOptions();
+document.getElementById('pickSelect').value = 'Draw';
+document.getElementById('confidence').value = '7';
+document.getElementById('confVal').textContent = '7';
+document.getElementById('reasoning').value = 'Both teams are evenly matched, tactical battle will end in draw';
+submitPrediction();
+
+await new Promise(r => setTimeout(r, 500));
+
+// Prediction 3: France vs Germany - pick France, low confidence (cautious)
+document.getElementById('matchSelect').value = '4'; // France vs Germany
+updatePickOptions();
+document.getElementById('pickSelect').value = '🇫🇷 France';
+document.getElementById('confidence').value = '3';
+document.getElementById('confVal').textContent = '3';
+document.getElementById('reasoning').value = 'Germany has home advantage but France has better squad depth';
+submitPrediction();
+
+await new Promise(r => setTimeout(r, 500));
+
+console.log('%c✅ Made 3 predictions with different patterns', 'color: #10b981;');
+console.log('Total predictions:', state.predictions.length);
+
+// ============================================================
+// SECTION 3: CHECK MEMORY BUILT FROM PREDICTIONS
+// ============================================================
+console.log('%c\nStep 3: Memory built from predictions', 'color: #fbbf24; font-size: 14px;');
+
+switchTab('memory');
+console.log('%c✅ On Memory tab - showing agent learned:', 'color: #10b981;');
+console.log('- Total memories:', state.memories.length);
+state.memories.forEach(m => console.log(`  [Session ${m.session}] ${m.type}: ${m.content}`));
+
+// ============================================================
+// SECTION 4: GET ROASTED (Day 1 Roast - Limited Data)
+// ============================================================
+console.log('%c\nStep 4: First roast (Day 1 - limited data)', 'color: #fbbf24; font-size: 14px;');
+
+switchTab('roast');
+generateRoast();
+
+// Wait for roast to render
+await new Promise(r => setTimeout(r, 500));
+
+console.log('%cRoast generated! Check the UI for results', 'color: #10b981;');
+
+// ============================================================
+// SECTION 5: SIMULATE NEW SESSION (Day 4+)
+// ============================================================
+console.log('%c\n=== WORLD CUP ORACLE DEMO - DAY 4+ (NEW SESSION) ===', 'color: #8b5cf6; font-size: 16px; font-weight: bold;');
+console.log('%cStep 5: Simulating new session (time passed)...', 'color: #10b981; font-size: 14px;');
+
+switchTab('memory');
+newSession();
+
+console.log('%c✅ New session started! Session:', state.currentSession, 'color: #10b981;');
+
+// ============================================================
+// SECTION 6: MAKE MORE PREDICTIONS (Session 2)
+// ============================================================
+console.log('%cStep 6: Making more predictions in Session 2...', 'color: #10b981; font-size: 14px;');
+
+switchTab('predict');
+
+// Prediction 4: Spain vs Portugal - pick Spain (shows team bias)
+document.getElementById('matchSelect').value = '5'; // Spain vs Portugal
+updatePickOptions();
+document.getElementById('pickSelect').value = '🇪🇸 Spain';
+document.getElementById('confidence').value = '8';
+document.getElementById('confVal').textContent = '8';
+document.getElementById('reasoning').value = 'Spain possession game will control tempo, Pedri & Yamal too good';
+submitPrediction();
+
+await new Promise(r => setTimeout(r, 500));
+
+// Prediction 5: Italy vs Netherlands - pick Italy again (bias forming)
+document.getElementById('matchSelect').value = '6'; // Italy vs Netherlands
+updatePickOptions();
+document.getElementById('pickSelect').value = '🇮🇹 Italy';
+document.getElementById('confidence').value = '8';
+document.getElementById('confVal').textContent = '8';
+document.getElementById('reasoning').value = 'Italy defense is impenetrable, Donnarumma in goal';
+submitPrediction();
+
+await new Promise(r => setTimeout(r, 500));
+
+// Prediction 6: Another Argentina pick (strong bias)
+document.getElementById('matchSelect').value = '1'; // Argentina vs Mexico again (for demo)
+updatePickOptions();
+document.getElementById('pickSelect').value = '🇦🇷 Argentina';
+document.getElementById('confidence').value = '9';
+document.getElementById('confVal').textContent = '9';
+document.getElementById('reasoning').value = 'Argentina destiny confirmed, can\'t bet against Messi';
+submitPrediction();
+
+console.log('%c✅ Made 3 more predictions - patterns emerging', 'color: #10b981;');
+console.log('Total predictions:', state.predictions.length);
+
+// ============================================================
+// SECTION 7: CHECK MEMORY NOW (Day 4+ Memory Depth)
+// ============================================================
+console.log('%c\nStep 7: Memory depth after 2 sessions', 'color: #fbbf24; font-size: 14px;');
+
+switchTab('memory');
+console.log('%cAgent now has:', 'color: #10b981;');
+console.log('- Total memories:', state.memories.length);
+console.log('- Sessions:', state.sessions);
+
+// Show key memories
+const keyMemories = state.memories.filter(m => m.type === 'preference' || m.type === 'trait' || m.type === 'session');
+keyMemories.forEach(m => console.log(`  [Session ${m.session}] ${m.type}: ${m.content}`));
+
+// ============================================================
+// SECTION 8: GET ROASTED AGAIN (Day 4+ Roast - Rich Data)
+// ============================================================
+console.log('%c\nStep 8: Roast after 2 sessions (MUCH more personal)', 'color: #fbbf24; font-size: 14px;');
+
+switchTab('roast');
+generateRoast();
+
+await new Promise(r => setTimeout(r, 500));
+
+console.log('%c✅ Compare this roast to Day 1 - much more specific!', 'color: #10b981;');
+
+// ============================================================
+// SECTION 9: STATS & PERSONALITY PROFILE
+// ============================================================
+console.log('%c\nStep 9: Stats & Personality Profile', 'color: #fbbf24; font-size: 14px;');
+
+switchTab('stats');
+console.log('%cStats:', 'color: #10b981;');
+console.log('- Total:', document.getElementById('statTotal').textContent);
+console.log('- Accuracy:', document.getElementById('statAccuracy').textContent);
+console.log('- Avg Confidence:', document.getElementById('statAvgConf').textContent);
+console.log('- Streak:', document.getElementById('statStreak').textContent);
+console.log('- Sessions:', document.getElementById('statSessions').textContent);
+
+console.log('%cPersonality:', 'color: #10b981;');
+console.log(document.getElementById('personalityText').innerText);
+
+// ============================================================
+// SECTION 10: AGENT CHAT - MEMORY AWARE CONVERSATION
+// ============================================================
+console.log('%c\nStep 10: Chat with Oracle - it remembers everything', 'color: #fbbf24; font-size: 14px;');
+
+switchTab('agent');
+
+// Send test messages
+const chatInput = document.getElementById('chatInput');
+
+// Question 1: About predictions
+chatInput.value = 'What are my predictions so far?';
+sendChat();
+
+await new Promise(r => setTimeout(r, 1500));
+
+// Question 2: About bias
+chatInput.value = 'What teams am I biased towards?';
+sendChat();
+
+await new Promise(r => setTimeout(r, 1500));
+
+// Question 3: About accuracy
+chatInput.value = 'How accurate am I?';
+sendChat();
+
+await new Promise(r => setTimeout(r, 1500));
+
+// Question 4: About Walrus
+chatInput.value = 'How does Walrus memory work here?';
+sendChat();
+
+console.log('%c✅ Chat demonstrates persistent memory awareness', 'color: #10b981;');
+
+// ============================================================
+// SECTION 11: WALRUS STORAGE DEMO
+// ============================================================
+console.log('%c\nStep 11: Walrus Memory Storage', 'color: #fbbf24; font-size: 14px;');
+
+switchTab('memory');
+saveMemoryToWalrus();
+
+await new Promise(r => setTimeout(r, 1500));
+
+console.log('%cStorage status:', document.getElementById('memoryStatus').innerText);
+
+// ============================================================
+// FINAL SUMMARY
+// ============================================================
+console.log('%c\n=== DEMO COMPLETE ===', 'color: #fbbf24; font-size: 18px; font-weight: bold;');
+console.log('%cKey hackathon requirements demonstrated:', 'color: #10b981;');
+console.log('✅ Persistent memory across sessions (Day 1 vs Day 4+)');
+console.log('✅ Agent behavior changes based on memory');
+console.log('✅ Memory visualization (timeline)');
+console.log('✅ World Cup 2026 theme');
+console.log('✅ Public interface with predictions, roast, stats, chat');
+console.log('✅ Walrus storage integration');
+console.log('✅ Deployable as static site to Walrus Sites');
+
+console.log('%c\n🎥 Video recording tips:', 'color: #8b5cf6;');
+console.log('1. Record full screen at 1080p');
+console.log('2. Keep under 3 minutes');
+console.log('3. Narrate: "Day 1 - agent knows nothing" → "Day 4 - agent roasts my Argentina bias"');
+console.log('4. Show the Memory tab timeline');
+console.log('5. Show Agent Chat referencing previous sessions');
+console.log('6. Show Walrus save/load');
