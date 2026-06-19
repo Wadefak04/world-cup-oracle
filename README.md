@@ -13,7 +13,7 @@
 | Agent references previous sessions | ✅ Memory timeline + session tracking |
 | Publicly accessible interface | ✅ Web app with prediction history, roast, stats |
 | World Cup 2026 theme | ✅ Full tournament prediction tracking |
-| Deployable on Walrus Mainnet | ✅ Static site → Walrus Sites |
+| Deployable on Walrus Mainnet | ✅ Static site → Walrus Sites (testnet deployed) |
 
 ## 🧠 How Memory Works
 
@@ -36,38 +36,33 @@ Frontend (Single HTML file)
 
 ## 🚀 Deployment
 
+### Testnet (Deployed)
+- **Site Object ID**: `0xd5ce725b3bb2bb97441b89ad7d58af11450f48c5f83658a1819da55136e625d3`
+- **Access via Local Portal**: `http://5bu8x4a6wkzbsev01qovy5oq7juih14t29cwg4tnykl3v1jz6b.localhost:3000`
+- **Setup Portal**: https://docs.wal.app/walrus-sites/portal.html#running-the-portal-locally
+
+### Mainnet (Ready - needs WAL tokens)
+```bash
+# Update sites-config.yaml default_context: mainnet
+# Ensure wallet has Mainnet WAL
+site-builder deploy --epochs 53 .
+```
+
 ### Local Development
 ```bash
-# Just open index.html in a browser — no build step needed!
-# Or use a simple HTTP server:
+# Just open index.html in browser — no build step needed!
 python3 -m http.server 8080
 ```
 
-### Deploy to Walrus Sites
-```bash
-# Install site-builder
-cargo install walrus-site-builder
-
-# Configure
-cp sites-config.yaml.example sites-config.yaml
-# Edit sites-config.yaml with your Sui package ID
-
-# Build & Deploy
-site-builder deploy --epochs 10 ./path-to-index-file
-```
-
-### Demo Mode
-The app runs in **demo mode** by default (no wallet needed). Memory is stored in localStorage. Connect a Sui wallet to persist on Walrus Mainnet.
-
 ## 📋 DeepSurge Submission Checklist
 
-- [ ] Project name: **World Cup Oracle**
-- [ ] Project description: AI agent with persistent memory for World Cup 2026 predictions
-- [ ] GitHub repo: [link]
-- [ ] Live demo: [Walrus Sites link]
-- [ ] Demo video: [3 min max]
-- [ ] Wallet address: [Sui wallet for WAL prizes]
-- [ ] Airtable submission: [form link]
+- [x] Project name: **World Cup Oracle**
+- [x] Project description: AI agent with persistent memory for World Cup 2026 predictions
+- [x] GitHub repo: https://github.com/Wadefak04/world-cup-oracle
+- [x] Live demo: Testnet deployed (see above)
+- [x] Demo video: See `demo-script.md` (record using script)
+- [x] Wallet address: `0x01f398f5deee6e97bcfa28689513f8b172aa8c106e5b03b9de495cc1c3e8d6b1`
+- [ ] Airtable submission: https://airtable.com/appoDAKpC74UOqoDa/shrIl2BMnzMwpuLhO
 - [ ] Discord joined: Walrus Discord
 - [ ] X post: #Walrus hashtag
 
@@ -80,3 +75,26 @@ The app runs in **demo mode** by default (no wallet needed). Memory is stored in
 5. **🤖 Agent Chat** — Conversational AI that references your history
 6. **⏭️ Session Simulation** — Demonstrate Day 1 vs Day 4+ behavior
 7. **💾 Walrus Storage** — Real persistent memory on decentralized storage
+
+## 🛠️ Tech Stack
+
+- **Frontend**: Vanilla HTML/CSS/JS (single file, no build)
+- **Storage**: Walrus Protocol (blobs + Sites)
+- **Blockchain**: Sui (site object, WAL payments)
+- **Deployment**: `site-builder` CLI
+
+## 📝 Demo Video Script
+
+See `demo-script.md` for a 3-minute recording guide covering:
+- Introduction
+- Making predictions
+- Memory timeline
+- Session simulation (Day 1 vs Day 4+)
+- Prediction roast
+- Stats & personality
+- Agent chat
+- Walrus integration
+
+---
+
+**Built for Walrus Memory World Cup Hackathon** 🦭🏆
